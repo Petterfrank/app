@@ -1,32 +1,14 @@
-2️⃣ Instalar dependencias
+-Instalar dependencias
 
 npm install
 
-3️⃣ Instalar Expo CLI (si no lo tienes instalado)
+-Instalar Expo CLI (si no lo tienes instalado)
 
 npm install -g expo-cli
 
-4️⃣ Ejecutar la aplicación
+-Ejecutar la aplicación
 
 npx expo start
-
-📁 Estructura del Proyecto
-
-📂 app/
-│── 📂 assets/            # Imágenes y recursos estáticos
-│── 📂 components/        # Componentes reutilizables
-│   ├── LoginForm.js      # Formulario de inicio de sesión
-│── 📂 navigation/        # Configuración de navegación
-│   ├── Navigation.js     # Definición de las pantallas y rutas
-│── 📂 screens/           # Pantallas principales de la app
-│   ├── ClientScreen.js   # Pantalla del Cliente
-│   ├── ResearcherScreen.js # Pantalla del Investigador
-│   ├── AdminScreen.js    # Pantalla del Administrador
-│   ├── RegisterScreen.js # Pantalla de Registro
-│── 📂 node_modules/      # Dependencias de Node.js (se genera con npm install)
-│── 📜 App.js             # Punto de entrada de la aplicación
-│── 📜 package.json       # Configuración de dependencias y scripts
-│── 📜 README.md          # Documentación del proyecto
 
 🛠 Tecnologías utilizadas
 
