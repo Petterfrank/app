@@ -28,7 +28,7 @@ export default function RegisterScreen({ navigation }) {
         <TextInput
           style={styles.input}
           placeholder="Ingresa tu nombre"
-          placeholderTextColor="#50B648"
+          placeholderTextColor="#A7C4A0"
           value={username}
           onChangeText={setUsername}
         />
@@ -37,7 +37,7 @@ export default function RegisterScreen({ navigation }) {
         <TextInput
           style={styles.input}
           placeholder="Ingresa tu correo"
-          placeholderTextColor="#50B648"
+          placeholderTextColor="#A7C4A0"
           value={email}
           onChangeText={setEmail}
         />
@@ -46,7 +46,7 @@ export default function RegisterScreen({ navigation }) {
         <TextInput
           style={styles.input}
           placeholder="Ingresa tu contraseña"
-          placeholderTextColor="#50B648"
+          placeholderTextColor="#A7C4A0"
           value={password}
           onChangeText={setPassword}
           secureTextEntry
@@ -56,7 +56,7 @@ export default function RegisterScreen({ navigation }) {
         <TextInput
           style={styles.input}
           placeholder="Confirma tu contraseña"
-          placeholderTextColor="#50B648"
+          placeholderTextColor="#A7C4A0"
           value={confirmPassword}
           onChangeText={setConfirmPassword}
           secureTextEntry
@@ -78,32 +78,28 @@ const styles = StyleSheet.create({
     flex: 1,
     justifyContent: 'center',
     alignItems: 'center',
-    backgroundColor: '#046205',
-  },
-  cancelButton: {
-    backgroundColor: '#D32F2F', 
-    padding: 15,
-    borderRadius: 5,
-    alignItems: 'center',
-    marginTop: 10,
+    backgroundColor: '#F5F5DC', // Beige suave
   },
   title: {
-    color: '#FFFFFF',
+    color: '#8B7765', // Marrón tierra
     fontSize: 24,
     fontWeight: 'bold',
     marginBottom: 20,
   },
   formContainer: {
-    backgroundColor: '#04CE03',
+    backgroundColor: '#FFFFF0', // Marfil claro
     padding: 20,
     borderRadius: 10,
     width: '90%',
     maxWidth: 400,
-    boxShadow: '0px 2px 4px rgba(0,0,0,0.8)', 
+    shadowColor: '#000',
+    shadowOffset: { width: 0, height: 2 },
+    shadowOpacity: 0.8,
+    shadowRadius: 2,
     elevation: 5,
   },
   label: {
-    color: '#FFFFFF',
+    color: '#8B7765', // Marrón tierra
     marginBottom: 5,
     fontSize: 16,
   },
@@ -111,12 +107,19 @@ const styles = StyleSheet.create({
     backgroundColor: '#FFFFFF',
     padding: 10,
     borderRadius: 5,
-    color: '#50B648',
+    color: '#9CA88F', // Verde salvia
     fontSize: 16,
     marginBottom: 15,
   },
   button: {
-    backgroundColor: '#088F44',
+    backgroundColor: '#D4A76A', // Amarillo mostaza
+    padding: 15,
+    borderRadius: 5,
+    alignItems: 'center',
+    marginTop: 10,
+  },
+  cancelButton: {
+    backgroundColor: '#C7875D', // Terracota suave
     padding: 15,
     borderRadius: 5,
     alignItems: 'center',

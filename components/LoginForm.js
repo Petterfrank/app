@@ -36,7 +36,7 @@ export default function LoginForm({ navigation }) {
           <TextInput
             style={styles.input}
             placeholder="Ingresa tu usuario"
-            placeholderTextColor="#50B648"
+            placeholderTextColor="#A7C4A0"
             value={username}
             onChangeText={setUsername}
           />
@@ -46,7 +46,7 @@ export default function LoginForm({ navigation }) {
           <TextInput
             style={styles.input}
             placeholder="Ingresa tu contraseña"
-            placeholderTextColor="#50B648"
+            placeholderTextColor="#A7C4A0"
             value={password}
             onChangeText={setPassword}
             secureTextEntry
@@ -68,7 +68,7 @@ const styles = StyleSheet.create({
     flex: 1,
     justifyContent: 'center',
     alignItems: 'center',
-    backgroundColor: '#046205', 
+    backgroundColor: '#F5F5DC', // Beige suave
   },
   header: {
     flexDirection: 'row',
@@ -79,14 +79,15 @@ const styles = StyleSheet.create({
     width: 100,
     height: 100,
     marginRight: 20,
+    borderRadius: 50,
   },
   title: {
-    color: '#FFFFFF', 
+    color: '#8B7765', // Marrón tierra
     fontSize: 24,
     fontWeight: 'bold',
   },
   formContainer: {
-    backgroundColor: '#04CE03', 
+    backgroundColor: '#FFFFF0', // Marfil claro
     padding: 20,
     borderRadius: 10,
     width: '90%',
@@ -101,7 +102,7 @@ const styles = StyleSheet.create({
     marginBottom: 15,
   },
   label: {
-    color: '#FFFFFF', 
+    color: '#8B7765', // Marrón tierra
     marginBottom: 5,
     fontSize: 16,
   },
@@ -109,11 +110,11 @@ const styles = StyleSheet.create({
     backgroundColor: '#FFFFFF',
     padding: 10,
     borderRadius: 5,
-    color: '#50B648',
+    color: '#9CA88F', // Verde salvia
     fontSize: 16,
   },
   button: {
-    backgroundColor: '#088F44', 
+    backgroundColor: '#D4A76A', // Amarillo mostaza
     padding: 15,
     borderRadius: 5,
     alignItems: 'center',
@@ -129,7 +130,7 @@ const styles = StyleSheet.create({
     alignItems: 'center',
   },
   registerButtonText: {
-    color: '#FFFFFF', 
+    color: '#C7875D', // Terracota suave
     fontSize: 16,
     textDecorationLine: 'underline',
   },
