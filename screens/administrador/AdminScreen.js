@@ -1,5 +1,5 @@
 import React, { useState } from 'react';
-import { View, Text, StyleSheet, FlatList, TouchableOpacity, Modal, Button, Platform } from 'react-native'; // Asegúrate de importar Platform
+import { View, Text, StyleSheet, FlatList, TouchableOpacity, Modal, Button, Platform } from 'react-native';
 import { MoreVertical } from 'lucide-react-native';
 import { useNavigation } from '@react-navigation/native';
 
@@ -10,8 +10,7 @@ const initialUsers = [
   { id: '4', name: 'Usuario 4', type: 'investigador' },
 ];
 
-export default function AdminScreen() {
-  const navigation = useNavigation();
+export default function AdminScreen({ navigation }) {
   const [users, setUsers] = useState(initialUsers);
   const [selectedUser, setSelectedUser] = useState(null);
   const [modalVisible, setModalVisible] = useState(false);
@@ -30,6 +29,11 @@ export default function AdminScreen() {
     setModalVisible(false);
   };
 
+  // Función para cerrar sesión
+  const handleLogout = () => {
+    navigation.navigate('Login'); // Redirige al usuario a la pantalla de inicio de sesión
+  };
+
   const renderItem = ({ item }) => (
     <TouchableOpacity style={styles.userItem} onPress={() => handleEditUser(item)}>
       <Text style={styles.userName}>{item.name}</Text>
@@ -46,7 +50,14 @@ export default function AdminScreen() {
         </TouchableOpacity>
         {menuVisible && (
           <View style={styles.menu}>
-            <TouchableOpacity onPress={() => navigation.navigate('Login')}>
+            <TouchableOpacity onPress={() => navigation.navigate('AdminResearcher')}>
+              <Text style={styles.menuItem}>Modo Investigador</Text>
+            </TouchableOpacity>
+            {/* Nuevo botón para ver enfermedades */}
+            <TouchableOpacity onPress={() => navigation.navigate('Diseases')}>
+              <Text style={styles.menuItem}>Ver Enfermedades</Text>
+            </TouchableOpacity>
+            <TouchableOpacity onPress={handleLogout}>
               <Text style={styles.menuItem}>Cerrar Sesión</Text>
             </TouchableOpacity>
           </View>
@@ -85,7 +96,8 @@ const styles = StyleSheet.create({
     alignItems: 'center',
     backgroundColor: '#006400', // Verde oscuro
     padding: 15,
-    paddingTop: Platform.OS === 'android' ? 40 : 15, 
+    paddingTop: Platform.OS === 'android' ? 40 : 15,
+    zIndex: 1, // Asegura que el header esté por encima de otros elementos
   },
   headerText: {
     color: 'white',
@@ -104,6 +116,7 @@ const styles = StyleSheet.create({
     shadowOpacity: 0.8,
     shadowRadius: 2,
     elevation: 5,
+    zIndex: 100, // Asegura que el menú esté por encima de otros elementos
   },
   menuItem: {
     paddingVertical: 5,
@@ -111,6 +124,7 @@ const styles = StyleSheet.create({
     color: '#004d00',
   },
   listContainer: {
+    flexGrow: 1, // Asegura que el contenido ocupe todo el espacio
     padding: 20,
   },
   userItem: {
@@ -135,6 +149,7 @@ const styles = StyleSheet.create({
     justifyContent: 'center',
     alignItems: 'center',
     backgroundColor: 'rgba(0, 0, 0, 0.5)',
+    zIndex: 1000, // Asegura que el modal esté por encima de otros elementos
   },
   modalContent: {
     backgroundColor: '#FFFFFF',

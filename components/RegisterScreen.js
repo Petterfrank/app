@@ -1,20 +1,19 @@
 import React, { useState } from 'react';
 import { View, Text, TextInput, TouchableOpacity, StyleSheet, Alert, Image, KeyboardAvoidingView, Platform } from 'react-native';
 
-export default function LoginForm({ navigation }) {
+export default function RegisterScreen({ navigation }) {
   const [username, setUsername] = useState('');
+  const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
+  const [confirmPassword, setConfirmPassword] = useState('');
 
-  const handleLogin = () => {
-    if (username && password) {
-      if (username === 'investigador') {
-        navigation.navigate('Researcher');
-      } else if (username === 'cliente') {
-        navigation.navigate('Client');
-      } else if (username === 'admin') {
-        navigation.navigate('Admin');
+  const handleRegister = () => {
+    if (username && email && password && confirmPassword) {
+      if (password === confirmPassword) {
+        Alert.alert('Éxito', 'Cuenta creada correctamente.');
+        navigation.navigate('Login');
       } else {
-        Alert.alert('Error', 'Usuario no válido.');
+        Alert.alert('Error', 'Las contraseñas no coinciden.');
       }
     } else {
       Alert.alert('Error', 'Por favor, completa todos los campos.');
@@ -28,42 +27,69 @@ export default function LoginForm({ navigation }) {
     >
       <View style={styles.header}>
         <Image source={require('../assets/logo.jpg')} style={styles.logo} />
-        <Text style={styles.title}>Inicio de Sesión</Text>
+        <Text style={styles.title}>Registro de Usuario</Text>
       </View>
+      
       <View style={styles.formContainer}>
         <View style={styles.inputGroup}>
-          <Text style={styles.label}>Usuario:</Text>
+          <Text style={styles.label}>Nombre de Usuario:</Text>
           <TextInput
             style={styles.input}
-            placeholder="Ingresa tu usuario"
+            placeholder="Ingresa tu nombre de usuario"
             placeholderTextColor="#A7C4A0"
             value={username}
             onChangeText={setUsername}
+            autoCapitalize="none"
           />
         </View>
+
+        <View style={styles.inputGroup}>
+          <Text style={styles.label}>Correo Electrónico:</Text>
+          <TextInput
+            style={styles.input}
+            placeholder="Ingresa tu correo electrónico"
+            placeholderTextColor="#A7C4A0"
+            value={email}
+            onChangeText={setEmail}
+            keyboardType="email-address"
+            autoCapitalize="none"
+          />
+        </View>
+
         <View style={styles.inputGroup}>
           <Text style={styles.label}>Contraseña:</Text>
           <TextInput
             style={styles.input}
-            placeholder="Ingresa tu contraseña"
+            placeholder="Crea una contraseña segura"
             placeholderTextColor="#A7C4A0"
             value={password}
             onChangeText={setPassword}
             secureTextEntry
           />
         </View>
-        <TouchableOpacity 
-          style={styles.forgotPasswordButton}
-          onPress={() => navigation.navigate('ForgotPassword')}
-        >
-          <Text style={styles.forgotPasswordText}>¿Olvidaste tu contraseña?</Text>
+
+        <View style={styles.inputGroup}>
+          <Text style={styles.label}>Confirmar Contraseña:</Text>
+          <TextInput
+            style={styles.input}
+            placeholder="Repite tu contraseña"
+            placeholderTextColor="#A7C4A0"
+            value={confirmPassword}
+            onChangeText={setConfirmPassword}
+            secureTextEntry
+          />
+        </View>
+
+        <TouchableOpacity style={styles.button} onPress={handleRegister}>
+          <Text style={styles.buttonText}>Crear Cuenta</Text>
         </TouchableOpacity>
-        <TouchableOpacity style={styles.button} onPress={handleLogin}>
-          <Text style={styles.buttonText}>Iniciar Sesión</Text>
-        </TouchableOpacity>
-        <TouchableOpacity style={styles.registerButton} onPress={() => navigation.navigate('Register')}>
-          <Text style={styles.registerButtonText}>¿No tienes una cuenta? Regístrate</Text>
-        </TouchableOpacity>
+
+        <View style={styles.footer}>
+          <Text style={styles.footerText}>¿Ya tienes una cuenta?</Text>
+          <TouchableOpacity onPress={() => navigation.navigate('Login')}>
+            <Text style={styles.loginLink}>Inicia Sesión</Text>
+          </TouchableOpacity>
+        </View>
       </View>
     </KeyboardAvoidingView>
   );
@@ -91,6 +117,7 @@ const styles = StyleSheet.create({
     color: '#8B7765',
     fontSize: 24,
     fontWeight: 'bold',
+    maxWidth: 200,
   },
   formContainer: {
     backgroundColor: '#FFFFF0',
@@ -124,29 +151,29 @@ const styles = StyleSheet.create({
     padding: 15,
     borderRadius: 5,
     alignItems: 'center',
-    marginTop: 10,
+    marginTop: 20,
+    marginBottom: 10,
   },
   buttonText: {
     color: '#FFFFFF',
     fontSize: 18,
     fontWeight: 'bold',
   },
-  forgotPasswordButton: {
-    alignSelf: 'flex-end',
-    marginBottom: 10,
-  },
-  forgotPasswordText: {
-    color: '#C7875D',
-    fontSize: 14,
-    textDecorationLine: 'underline',
-  },
-  registerButton: {
-    marginTop: 10,
+  footer: {
+    flexDirection: 'row',
+    justifyContent: 'center',
     alignItems: 'center',
+    marginTop: 10,
   },
-  registerButtonText: {
+  footerText: {
+    color: '#8B7765',
+    fontSize: 16,
+    marginRight: 5,
+  },
+  loginLink: {
     color: '#C7875D',
     fontSize: 16,
+    fontWeight: 'bold',
     textDecorationLine: 'underline',
   },
 });
