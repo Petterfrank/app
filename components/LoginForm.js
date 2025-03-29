@@ -1,24 +1,76 @@
 import React, { useState } from 'react';
 import { View, Text, TextInput, TouchableOpacity, StyleSheet, Alert, Image, KeyboardAvoidingView, Platform } from 'react-native';
+import AsyncStorage from '@react-native-async-storage/async-storage';
+import api from '../api';
 
-export default function LoginForm({ navigation }) {
-  const [username, setUsername] = useState('');
+export default function LoginScreen({ navigation }) {
+  const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
+  const [loading, setLoading] = useState(false);
+  const [error, setError] = useState(null);
 
-  const handleLogin = () => {
-    if (username && password) {
-      if (username === 'investigador') {
-        navigation.navigate('Researcher');
-      } else if (username === 'cliente') {
-        navigation.navigate('Client');
-      } else if (username === 'admin') {
-        navigation.navigate('Admin');
-      } else {
-        Alert.alert('Error', 'Usuario no válido.');
-      }
-    } else {
-      Alert.alert('Error', 'Por favor, completa todos los campos.');
+  const handleLogin = async () => {
+    if (!email.trim() || !password.trim()) {
+      setError('Por favor, completa todos los campos');
+      return;
     }
+    setError(null);
+    setLoading(true);
+
+    try {
+      console.log("Iniciando sesión con:", { email: email.toLowerCase().trim() });
+      
+      const response = await api.post("/login/", { 
+        email: email.toLowerCase().trim(), 
+        password 
+      });
+      
+      console.log("Respuesta del servidor:", response.data);
+
+      const { access, refresh, role, user_id } = response.data;
+
+      await AsyncStorage.multiSet([
+        ["access_token", access],
+        ["refresh_token", refresh],
+        ["user_role", role],
+        ["user_id", user_id.toString()],
+      ]);
+
+      console.log("Datos almacenados correctamente");
+      navigateByRole(role);
+
+    } catch (error) {
+      console.error("Error en login:", {
+        message: error.message,
+        response: error.response?.data,
+        code: error.code
+      });
+
+      const errorMessage = error.response?.data?.error || 
+                         error.message || 
+                         "Error de conexión con el servidor";
+      
+      setError(errorMessage);
+      Alert.alert("Error", errorMessage);
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  const navigateByRole = (role) => {
+    const roleMapping = {
+      admin: "Admin",
+      staff: "Researcher",
+      usuario: "Client",
+    };
+
+    const screen = roleMapping[role.toLowerCase()] || "LoginScreen";
+    console.log(`Navegando a: ${screen} según rol: ${role}`);
+
+    navigation.reset({
+      index: 0,
+      routes: [{ name: screen }],
+    });
   };
 
   return (
@@ -30,39 +82,64 @@ export default function LoginForm({ navigation }) {
         <Image source={require('../assets/logo.jpg')} style={styles.logo} />
         <Text style={styles.title}>Inicio de Sesión</Text>
       </View>
+      
       <View style={styles.formContainer}>
+        {error && <Text style={styles.errorText}>{error}</Text>}
+
         <View style={styles.inputGroup}>
-          <Text style={styles.label}>Usuario:</Text>
+          <Text style={styles.label}>Correo Electrónico:</Text>
           <TextInput
-            style={styles.input}
-            placeholder="Ingresa tu usuario"
+            style={[styles.input, error && styles.inputError]}
+            placeholder="Ingresa tu correo"
             placeholderTextColor="#A7C4A0"
-            value={username}
-            onChangeText={setUsername}
+            value={email}
+            onChangeText={(text) => {
+              setEmail(text);
+              setError(null);
+            }}
+            keyboardType="email-address"
+            autoCapitalize="none"
+            autoCorrect={false}
           />
         </View>
+
         <View style={styles.inputGroup}>
           <Text style={styles.label}>Contraseña:</Text>
           <TextInput
-            style={styles.input}
+            style={[styles.input, error && styles.inputError]}
             placeholder="Ingresa tu contraseña"
             placeholderTextColor="#A7C4A0"
             value={password}
-            onChangeText={setPassword}
+            onChangeText={(text) => {
+              setPassword(text);
+              setError(null);
+            }}
             secureTextEntry
           />
         </View>
+
+        <TouchableOpacity 
+          style={[styles.button, loading && styles.disabledButton]} 
+          onPress={handleLogin}
+          disabled={loading}
+        >
+          <Text style={styles.buttonText}>
+            {loading ? 'Iniciando sesión...' : 'Iniciar Sesión'}
+          </Text>
+        </TouchableOpacity>
+
+        <TouchableOpacity 
+          style={styles.secondaryButton} 
+          onPress={() => navigation.navigate('Register')}
+        >
+          <Text style={styles.secondaryButtonText}>¿No tienes cuenta? Regístrate</Text>
+        </TouchableOpacity>
+
         <TouchableOpacity 
           style={styles.forgotPasswordButton}
           onPress={() => navigation.navigate('ForgotPassword')}
         >
           <Text style={styles.forgotPasswordText}>¿Olvidaste tu contraseña?</Text>
-        </TouchableOpacity>
-        <TouchableOpacity style={styles.button} onPress={handleLogin}>
-          <Text style={styles.buttonText}>Iniciar Sesión</Text>
-        </TouchableOpacity>
-        <TouchableOpacity style={styles.registerButton} onPress={() => navigation.navigate('Register')}>
-          <Text style={styles.registerButtonText}>¿No tienes una cuenta? Regístrate</Text>
         </TouchableOpacity>
       </View>
     </KeyboardAvoidingView>
@@ -114,39 +191,52 @@ const styles = StyleSheet.create({
   },
   input: {
     backgroundColor: '#FFFFFF',
-    padding: 10,
+    padding: 12,
     borderRadius: 5,
-    color: '#9CA88F',
+    color: '#333',
     fontSize: 16,
+    borderWidth: 1,
+    borderColor: '#DDD',
+  },
+  inputError: {
+    borderColor: '#FF6B6B',
   },
   button: {
     backgroundColor: '#D4A76A',
     padding: 15,
     borderRadius: 5,
     alignItems: 'center',
-    marginTop: 10,
+    marginTop: 20,
+  },
+  disabledButton: {
+    backgroundColor: '#CCCCCC',
   },
   buttonText: {
     color: '#FFFFFF',
     fontSize: 18,
     fontWeight: 'bold',
   },
-  forgotPasswordButton: {
-    alignSelf: 'flex-end',
-    marginBottom: 10,
-  },
-  forgotPasswordText: {
-    color: '#C7875D',
-    fontSize: 14,
-    textDecorationLine: 'underline',
-  },
-  registerButton: {
-    marginTop: 10,
+  secondaryButton: {
+    marginTop: 15,
     alignItems: 'center',
   },
-  registerButtonText: {
+  secondaryButtonText: {
     color: '#C7875D',
     fontSize: 16,
     textDecorationLine: 'underline',
+  },
+  forgotPasswordButton: {
+    marginTop: 10,
+    alignItems: 'center',
+  },
+  forgotPasswordText: {
+    color: '#8B7765',
+    fontSize: 14,
+  },
+  errorText: {
+    color: '#FF6B6B',
+    fontSize: 14,
+    marginBottom: 10,
+    textAlign: 'center',
   },
 });

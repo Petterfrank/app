@@ -1,5 +1,5 @@
 import React, { useState, useRef, useEffect } from 'react';
-import { View, Text, TextInput,  TouchableOpacity,  StyleSheet,  Alert,  Image,  KeyboardAvoidingView,  Platform,  ScrollView,  PanResponder,  Dimensions, Modal } from 'react-native';
+import { View, Text, TextInput, TouchableOpacity, StyleSheet, Alert, Image, KeyboardAvoidingView, Platform, ScrollView, Modal, ActivityIndicator } from 'react-native';
 import { MoreVertical } from 'lucide-react-native';
 import * as ImagePicker from 'expo-image-picker';
 
@@ -9,39 +9,8 @@ export default function ClientScreen({ navigation }) {
   const [imageUri, setImageUri] = useState(null);
   const [disease, setDisease] = useState(null);
   const [menuVisible, setMenuVisible] = useState(false);
-  const [rectangle, setRectangle] = useState(null);
-  const [startPos, setStartPos] = useState(null);
-  const [imageLayout, setImageLayout] = useState(null);
   const [isLoading, setIsLoading] = useState(false);
-  
-  const { width } = Dimensions.get('window');
   const scrollViewRef = useRef();
-
-  // Optimización del PanResponder
-  const panResponder = useRef(
-    PanResponder.create({
-      onStartShouldSetPanResponder: () => true,
-      onPanResponderGrant: (evt, gestureState) => {
-        if (!imageUri || !imageLayout) return;
-        const touchX = gestureState.x0 - imageLayout.x;
-        const touchY = gestureState.y0 - imageLayout.y;
-        setStartPos({ x: touchX, y: touchY });
-        setRectangle({ x: touchX, y: touchY, width: 0, height: 0 });
-      },
-      onPanResponderMove: (evt, gestureState) => {
-        if (!startPos || !imageLayout) return;
-        const newWidth = gestureState.moveX - imageLayout.x - startPos.x;
-        const newHeight = gestureState.moveY - imageLayout.y - startPos.y;
-        setRectangle({
-          x: startPos.x,
-          y: startPos.y,
-          width: newWidth > 0 ? newWidth : 0,
-          height: newHeight > 0 ? newHeight : 0,
-        });
-      },
-      onPanResponderRelease: () => setStartPos(null),
-    })
-  ).current;
 
   useEffect(() => {
     const requestPermissions = async () => {
@@ -53,7 +22,6 @@ export default function ClientScreen({ navigation }) {
     
     requestPermissions();
     
-    // Limpieza al desmontar
     return () => {
       setImageUri(null);
       setDisease(null);
@@ -67,13 +35,12 @@ export default function ClientScreen({ navigation }) {
         mediaTypes: ImagePicker.MediaTypeOptions.Images,
         allowsEditing: true,
         aspect: [4, 3],
-        quality: 0.8, // Reducir calidad para mejor rendimiento
+        quality: 0.8,
       });
 
       if (!result.canceled) {
         setImageUri(result.assets[0].uri);
         setDisease(null);
-        setRectangle(null);
       }
     } catch (error) {
       Alert.alert('Error', 'No se pudo tomar la foto');
@@ -88,7 +55,6 @@ export default function ClientScreen({ navigation }) {
       return;
     }
 
-    // Simulación de detección
     setIsLoading(true);
     setTimeout(() => {
       setDisease({
@@ -96,8 +62,6 @@ export default function ClientScreen({ navigation }) {
         description: 'Infección fúngica que afecta las hojas y tallos.',
       });
       setIsLoading(false);
-      
-      // Desplazamiento automático a la sección de resultados
       scrollViewRef.current?.scrollToEnd({ animated: true });
     }, 1000);
   };
@@ -108,15 +72,13 @@ export default function ClientScreen({ navigation }) {
 
   return (
     <View style={styles.container}>
-      {/* Header */}
       <View style={styles.header}>
-        <Text style={styles.headerText}>Cliente</Text>
+        <Text style={styles.headerText}>Panel de Cliente</Text>
         <TouchableOpacity onPress={() => setMenuVisible(true)}>
           <MoreVertical size={24} color="white" />
         </TouchableOpacity>
       </View>
 
-      {/* Menú desplegable */}
       <Modal
         transparent={true}
         visible={menuVisible}
@@ -139,7 +101,6 @@ export default function ClientScreen({ navigation }) {
         </TouchableOpacity>
       </Modal>
 
-      {/* Contenido principal */}
       <ScrollView 
         ref={scrollViewRef}
         contentContainerStyle={styles.scrollContainer}
@@ -149,7 +110,6 @@ export default function ClientScreen({ navigation }) {
           behavior={Platform.OS === 'ios' ? 'padding' : null}
           style={styles.keyboardAvoidingView}
         >
-          {/* Formulario */}
           <View style={styles.formContainer}>
             <Text style={styles.label}>Nombre de la planta:</Text>
             <TextInput 
@@ -176,18 +136,15 @@ export default function ClientScreen({ navigation }) {
               onPress={takePhoto}
               disabled={isLoading}
             >
-              <Text style={styles.buttonText}>
-                {isLoading ? 'Procesando...' : 'Tomar Foto'}
-              </Text>
+              {isLoading ? (
+                <ActivityIndicator color="white" />
+              ) : (
+                <Text style={styles.buttonText}>Tomar Foto</Text>
+              )}
             </TouchableOpacity>
           </View>
 
-          {/* Área de la imagen */}
-          <View 
-            style={styles.imageContainer} 
-            onLayout={(event) => setImageLayout(event.nativeEvent.layout)}
-            {...panResponder.panHandlers}
-          >
+          <View style={styles.imageContainer}>
             {imageUri ? (
               <Image 
                 source={{ uri: imageUri }} 
@@ -201,18 +158,18 @@ export default function ClientScreen({ navigation }) {
             )}
           </View>
 
-          {/* Botón de detección */}
           <TouchableOpacity 
             style={[styles.button, styles.detectButton]} 
             onPress={detectDisease}
             disabled={!imageUri || isLoading}
           >
-            <Text style={styles.buttonText}>
-              {isLoading ? 'Analizando...' : 'Detectar Enfermedad'}
-            </Text>
+            {isLoading ? (
+              <ActivityIndicator color="white" />
+            ) : (
+              <Text style={styles.buttonText}>Detectar Enfermedad</Text>
+            )}
           </TouchableOpacity>
 
-          {/* Resultados de la detección */}
           {disease && (
             <View style={styles.diseaseInfo}>
               <Text style={styles.diseaseTitle}>{disease.name}</Text>
@@ -234,9 +191,8 @@ const styles = StyleSheet.create({
     flexDirection: 'row',
     justifyContent: 'space-between',
     alignItems: 'center',
-    width: '100%',
-    padding: 15,
     backgroundColor: '#006400',
+    padding: 15,
     paddingTop: Platform.OS === 'android' ? 40 : 15,
   },
   headerText: {

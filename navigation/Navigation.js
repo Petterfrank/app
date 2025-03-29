@@ -7,8 +7,8 @@ import ClientScreen from '../screens/cliente/ClientScreen';
 import RegisterScreen from '../components/RegisterScreen';
 import AdminScreen from '../screens/administrador/AdminScreen';
 import AdminResearcherScreen from '../screens/administrador/AdminResearcherScreen';
-import DiseasesScreen from '../screens/administrador/DiseasesScreen'; // Importa la pantalla de enfermedades
-import TreatmentScreen from '../screens/administrador/TreatmentScreen'; // Importa la pantalla de tratamiento
+import DiseasesScreen from '../screens/administrador/DiseasesScreen'; 
+import TreatmentScreen from '../screens/administrador/TreatmentScreen';
 
 const Stack = createStackNavigator();
 

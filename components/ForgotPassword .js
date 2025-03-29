@@ -1,21 +1,72 @@
 import React, { useState } from 'react';
-import { View, Text, TextInput, TouchableOpacity, StyleSheet, Alert, KeyboardAvoidingView, Platform } from 'react-native';
+import { View, Text, TextInput, TouchableOpacity, StyleSheet, Alert, KeyboardAvoidingView, Platform, ScrollView, ActivityIndicator } from 'react-native';
+import api from '../api'; 
 
 export default function ForgotPassword({ navigation }) {
   const [email, setEmail] = useState('');
+  const [newPassword, setNewPassword] = useState('');
+  const [confirmPassword, setConfirmPassword] = useState('');
+  const [step, setStep] = useState(1); 
+  const [isLoading, setIsLoading] = useState(false);
 
-  const handleResetPassword = () => {
-    if (email) {
-      // Aquí iría la lógica para enviar el correo de recuperación
-      Alert.alert(
-        'Correo enviado',
-        'Se ha enviado un enlace para restablecer tu contraseña a tu correo electrónico.',
-        [
-          { text: 'OK', onPress: () => navigation.goBack() }
-        ]
-      );
-    } else {
+  const handleVerifyEmail = async () => {
+    if (!email) {
       Alert.alert('Error', 'Por favor, ingresa tu correo electrónico.');
+      return;
+    }
+
+    setIsLoading(true);
+    try {
+      const response = await api.post('verify-email/', { email });
+      if (response.data.exists) {
+        setStep(2);
+      } else {
+        Alert.alert('Error', 'No existe una cuenta con este correo electrónico.');
+      }
+    } catch (error) {
+      Alert.alert('Error', 'Hubo un problema al verificar el correo. Inténtalo de nuevo.');
+      console.error('Error:', error);
+    } finally {
+      setIsLoading(false);
+    }
+  };
+
+  const handleChangePassword = async () => {
+    if (!newPassword || !confirmPassword) {
+      Alert.alert('Error', 'Por favor, completa ambos campos de contraseña.');
+      return;
+    }
+
+    if (newPassword !== confirmPassword) {
+      Alert.alert('Error', 'Las contraseñas no coinciden.');
+      return;
+    }
+
+    if (newPassword.length < 6) {
+      Alert.alert('Error', 'La contraseña debe tener al menos 6 caracteres.');
+      return;
+    }
+
+    setIsLoading(true);
+    try {
+      const response = await api.post('change-password/', {
+        email,
+        new_password: newPassword,
+        confirm_password: confirmPassword
+      });
+
+      if (response.data.success) {
+        Alert.alert(
+          'Éxito',
+          'Tu contraseña ha sido actualizada correctamente.',
+          [{ text: 'OK', onPress: () => navigation.navigate('Login') }]
+        );
+      }
+    } catch (error) {
+      const errorMessage = error.response?.data?.error || 'Error al cambiar la contraseña';
+      Alert.alert('Error', errorMessage);
+    } finally {
+      setIsLoading(false);
     }
   };
 
@@ -24,36 +75,100 @@ export default function ForgotPassword({ navigation }) {
       behavior={Platform.OS === 'ios' ? 'padding' : 'height'}
       style={styles.container}
     >
-      <View style={styles.formContainer}>
-        <Text style={styles.title}>Recuperar Contraseña</Text>
-        <Text style={styles.subtitle}>
-          Ingresa tu correo electrónico y te enviaremos un enlace para restablecer tu contraseña.
-        </Text>
-        
-        <View style={styles.inputGroup}>
-          <Text style={styles.label}>Correo electrónico:</Text>
-          <TextInput
-            style={styles.input}
-            placeholder="Ingresa tu correo electrónico"
-            placeholderTextColor="#A7C4A0"
-            value={email}
-            onChangeText={setEmail}
-            keyboardType="email-address"
-            autoCapitalize="none"
-          />
+      <ScrollView contentContainerStyle={styles.scrollContainer}>
+        <View style={styles.formContainer}>
+          {step === 1 ? (
+            <>
+              <Text style={styles.title}>Recuperar Contraseña</Text>
+              <Text style={styles.subtitle}>
+                Ingresa tu correo electrónico para cambiar tu contraseña.
+              </Text>
+              
+              <View style={styles.inputGroup}>
+                <Text style={styles.label}>Correo electrónico:</Text>
+                <TextInput
+                  style={styles.input}
+                  placeholder="Ingresa tu correo electrónico"
+                  placeholderTextColor="#A7C4A0"
+                  value={email}
+                  onChangeText={setEmail}
+                  keyboardType="email-address"
+                  autoCapitalize="none"
+                />
+              </View>
+              
+              <TouchableOpacity 
+                style={styles.button} 
+                onPress={handleVerifyEmail}
+                disabled={isLoading}
+              >
+                {isLoading ? (
+                  <ActivityIndicator color="white" />
+                ) : (
+                  <Text style={styles.buttonText}>Verificar correo</Text>
+                )}
+              </TouchableOpacity>
+            </>
+          ) : (
+            <>
+              <Text style={styles.title}>Nueva Contraseña</Text>
+              <Text style={styles.subtitle}>
+                Estás cambiando la contraseña para: {email}
+              </Text>
+              
+              <View style={styles.inputGroup}>
+                <Text style={styles.label}>Nueva contraseña:</Text>
+                <TextInput
+                  style={styles.input}
+                  placeholder="Ingresa tu nueva contraseña"
+                  placeholderTextColor="#A7C4A0"
+                  value={newPassword}
+                  onChangeText={setNewPassword}
+                  secureTextEntry
+                />
+              </View>
+
+              <View style={styles.inputGroup}>
+                <Text style={styles.label}>Confirmar contraseña:</Text>
+                <TextInput
+                  style={styles.input}
+                  placeholder="Confirma tu nueva contraseña"
+                  placeholderTextColor="#A7C4A0"
+                  value={confirmPassword}
+                  onChangeText={setConfirmPassword}
+                  secureTextEntry
+                />
+              </View>
+              
+              <TouchableOpacity 
+                style={styles.button} 
+                onPress={handleChangePassword}
+                disabled={isLoading}
+              >
+                {isLoading ? (
+                  <ActivityIndicator color="white" />
+                ) : (
+                  <Text style={styles.buttonText}>Cambiar contraseña</Text>
+                )}
+              </TouchableOpacity>
+
+              <TouchableOpacity 
+                style={styles.secondaryButton}
+                onPress={() => setStep(1)}
+              >
+                <Text style={styles.secondaryButtonText}>Cambiar correo</Text>
+              </TouchableOpacity>
+            </>
+          )}
+          
+          <TouchableOpacity 
+            style={styles.backButton}
+            onPress={() => navigation.goBack()}
+          >
+            <Text style={styles.backButtonText}>Volver al inicio de sesión</Text>
+          </TouchableOpacity>
         </View>
-        
-        <TouchableOpacity style={styles.button} onPress={handleResetPassword}>
-          <Text style={styles.buttonText}>Enviar enlace</Text>
-        </TouchableOpacity>
-        
-        <TouchableOpacity 
-          style={styles.backButton}
-          onPress={() => navigation.goBack()}
-        >
-          <Text style={styles.backButtonText}>Volver al inicio de sesión</Text>
-        </TouchableOpacity>
-      </View>
+      </ScrollView>
     </KeyboardAvoidingView>
   );
 }
@@ -61,52 +176,62 @@ export default function ForgotPassword({ navigation }) {
 const styles = StyleSheet.create({
   container: {
     flex: 1,
-    justifyContent: 'center',
-    alignItems: 'center',
     backgroundColor: '#F5F5DC',
+  },
+  scrollContainer: {
+    flexGrow: 1,
+    justifyContent: 'center',
   },
   formContainer: {
     backgroundColor: '#FFFFF0',
-    padding: 20,
+    padding: 25,
     borderRadius: 10,
-    width: '90%',
-    maxWidth: 400,
+    margin: 20,
     shadowColor: '#000',
     shadowOffset: { width: 0, height: 2 },
-    shadowOpacity: 0.8,
-    shadowRadius: 2,
-    elevation: 5,
+    shadowOpacity: 0.1,
+    shadowRadius: 4,
+    elevation: 3,
   },
   title: {
     color: '#8B7765',
     fontSize: 24,
     fontWeight: 'bold',
-    marginBottom: 10,
+    marginBottom: 15,
     textAlign: 'center',
   },
   subtitle: {
     color: '#8B7765',
     fontSize: 16,
-    marginBottom: 20,
+    marginBottom: 25,
     textAlign: 'center',
+    lineHeight: 22,
   },
   inputGroup: {
     marginBottom: 20,
   },
   label: {
     color: '#8B7765',
-    marginBottom: 5,
+    marginBottom: 8,
     fontSize: 16,
   },
   input: {
     backgroundColor: '#FFFFFF',
-    padding: 10,
+    padding: 15,
     borderRadius: 5,
-    color: '#9CA88F',
+    color: '#4d4d4d',
     fontSize: 16,
+    borderWidth: 1,
+    borderColor: '#ddd',
   },
   button: {
     backgroundColor: '#D4A76A',
+    padding: 15,
+    borderRadius: 5,
+    alignItems: 'center',
+    marginTop: 20,
+  },
+  secondaryButton: {
     padding: 15,
     borderRadius: 5,
     alignItems: 'center',
@@ -117,12 +242,17 @@ const styles = StyleSheet.create({
     fontSize: 18,
     fontWeight: 'bold',
   },
+  secondaryButtonText: {
+    color: '#228B22',
+    fontSize: 16,
+    textAlign: 'center',
+  },
   backButton: {
-    marginTop: 15,
+    marginTop: 25,
     alignItems: 'center',
   },
   backButtonText: {
-    color: '#C7875D',
+    color: '#8B7765',
     fontSize: 16,
     textDecorationLine: 'underline',
   },

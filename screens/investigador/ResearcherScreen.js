@@ -72,15 +72,13 @@ export default function ResearcherScreen({ navigation }) {
 
   return (
     <View style={styles.container}>
-      {/* Header */}
       <View style={styles.header}>
-        <Text style={styles.headerText}>Investigador</Text>
+        <Text style={styles.headerText}>Panel de Investigador</Text>
         <TouchableOpacity onPress={() => setMenuVisible(true)}>
           <MoreVertical size={24} color="white" />
         </TouchableOpacity>
       </View>
 
-      {/* Menú desplegable */}
       <Modal
         transparent={true}
         visible={menuVisible}
@@ -103,7 +101,6 @@ export default function ResearcherScreen({ navigation }) {
         </TouchableOpacity>
       </Modal>
 
-      {/* Contenido principal */}
       <ScrollView 
         ref={scrollViewRef}
         contentContainerStyle={styles.scrollContainer}
@@ -113,7 +110,6 @@ export default function ResearcherScreen({ navigation }) {
           behavior={Platform.OS === 'ios' ? 'padding' : null}
           style={styles.keyboardAvoidingView}
         >
-          {/* Formulario */}
           <View style={styles.formContainer}>
             <Text style={styles.label}>Nombre de la planta:</Text>
             <TextInput 
@@ -148,7 +144,6 @@ export default function ResearcherScreen({ navigation }) {
             </TouchableOpacity>
           </View>
 
-          {/* Área de la imagen */}
           <View style={styles.imageContainer}>
             {imageUri ? (
               <Image 
@@ -163,7 +158,6 @@ export default function ResearcherScreen({ navigation }) {
             )}
           </View>
 
-          {/* Botón de detección */}
           <TouchableOpacity 
             style={[styles.button, styles.detectButton]} 
             onPress={detectDisease}
@@ -176,7 +170,6 @@ export default function ResearcherScreen({ navigation }) {
             )}
           </TouchableOpacity>
 
-          {/* Resultados de la detección */}
           {disease && (
             <View style={styles.diseaseInfo}>
               <Text style={styles.diseaseTitle}>{disease.name}</Text>
