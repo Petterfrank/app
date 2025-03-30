@@ -1,8 +1,20 @@
 import React, { useState, useRef, useEffect, useCallback } from 'react';
-import { View, Text, TextInput, TouchableOpacity, StyleSheet, Alert, Image, KeyboardAvoidingView, Platform, ScrollView, Modal, ActivityIndicator } from 'react-native';
+import { 
+  View, 
+  Text, 
+  TextInput, 
+  TouchableOpacity, 
+  StyleSheet, 
+  Alert, 
+  Image, 
+  KeyboardAvoidingView, 
+  Platform, 
+  ScrollView, 
+  Modal, 
+  ActivityIndicator 
+} from 'react-native';
 import { MoreVertical } from 'lucide-react-native';
 import * as ImagePicker from 'expo-image-picker';
-import * as FileSystem from 'expo-file-system';
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import api from '../../api/index.js';
 
@@ -10,7 +22,6 @@ export default function AdminResearcherScreen({ navigation }) {
   const [plantName, setPlantName] = useState('');
   const [species, setSpecies] = useState('');
   const [location, setLocation] = useState('');
-  const [description, setDescription] = useState('');
   const [imageUri, setImageUri] = useState(null);
   const [disease, setDisease] = useState(null);
   const [menuVisible, setMenuVisible] = useState(false);
@@ -52,14 +63,15 @@ export default function AdminResearcherScreen({ navigation }) {
         quality: 0.8,
       });
 
-      if (!result.canceled) {
+      if (!result.canceled && result.assets && result.assets[0]) {
         setImageUri(result.assets[0].uri);
         setDisease(null);
         setSelection({ x: 0, y: 0, width: 0, height: 0, visible: false });
         setShowConfirmButton(false);
       }
     } catch (error) {
-      Alert.alert('Error', 'No se pudo tomar la foto');
+      console.error('Error al tomar foto:', error);
+      Alert.alert('Error', 'No se pudo tomar la foto. Por favor intente nuevamente.');
     } finally {
       setIsLoading(false);
     }
@@ -89,84 +101,79 @@ export default function AdminResearcherScreen({ navigation }) {
   }, [imageUri, selection]);
 
   const handleLogout = async () => {
-    await AsyncStorage.removeItem('userToken');
-    navigation.navigate('Login');
-  };
-
-  const savePlantData = async () => {
-    if (!plantName || !description || !imageUri || !selection.visible) {
-      Alert.alert('Error', 'Por favor complete todos los campos, tome una foto y seleccione el área afectada');
-      return;
-    }
-
-    setIsLoading(true);
     try {
-      // Obtener información del archivo de la imagen
-      const fileInfo = await FileSystem.getInfoAsync(imageUri);
-      
-      if (!fileInfo.exists) {
-        throw new Error('El archivo de imagen no existe');
-      }
-
-      // Obtener el token de autenticación
-      const token = await AsyncStorage.getItem('userToken');
-      if (!token) {
-        throw new Error('No se encontró el token de autenticación');
-      }
-
-      // Crear el objeto FormData
-      const formData = new FormData();
-      formData.append('nombre', plantName);
-      formData.append('especie', species);
-      formData.append('ubicacion', location);
-      formData.append('descripcion', description);
-      
-      // Agregar la imagen como archivo
-      formData.append('imagen', {
-        uri: imageUri,
-        name: 'plant_image.jpg',
-        type: 'image/jpeg',
-      });
-      
-      // Agregar datos del área afectada
-      formData.append('area_afectada_x', selection.x.toString());
-      formData.append('area_afectada_y', selection.y.toString());
-      formData.append('area_afectada_width', selection.width.toString());
-      formData.append('area_afectada_height', selection.height.toString());
-
-      // Enviar datos al backend
-      const response = await api.post('/plantas/', formData, {
-        headers: {
-          'Content-Type': 'multipart/form-data',
-          'Authorization': `Bearer ${token}`,
-        },
-      });
-
-      if (response.data) {
-        Alert.alert('Éxito', 'Planta registrada correctamente');
-        // Limpiar el formulario
-        setPlantName('');
-        setSpecies('');
-        setLocation('');
-        setDescription('');
-        setImageUri(null);
-        setDisease(null);
-        setSelection({ x: 0, y: 0, width: 0, height: 0, visible: false });
-        setShowConfirmButton(false);
-      } else {
-        throw new Error('Error al guardar la planta');
-      }
+      await AsyncStorage.multiRemove(['access_token', 'refresh_token', 'user_role', 'user_id']);
+      navigation.navigate('Login');
     } catch (error) {
-      console.error('Error al guardar la planta:', error);
-      Alert.alert('Error', error.message || 'No se pudo guardar la planta');
-    } finally {
-      setIsLoading(false);
+      console.error('Error al cerrar sesión:', error);
+      Alert.alert('Error', 'No se pudo cerrar sesión correctamente');
     }
   };
+
+const savePlantData = async () => {
+  if (!plantName || !imageUri) {
+    Alert.alert('Error', 'Nombre e imagen son campos obligatorios');
+    return;
+  }
+
+  setIsLoading(true);
+  
+  try {
+    const [userId, token] = await Promise.all([
+      AsyncStorage.getItem('user_id'),
+      AsyncStorage.getItem('access_token')
+    ]);
+
+    if (!userId || !token) {
+      throw new Error('No se encontraron credenciales de usuario');
+    }
+
+    const filename = imageUri.split('/').pop();
+    const extension = filename.split('.').pop() || 'jpg';
+    const uniqueFilename = `planta_${Date.now()}.${extension}`;
+
+    const formData = new FormData();
+    formData.append('Nombre', plantName.trim());
+    if (species) formData.append('Especie', species.trim());
+    if (location) formData.append('Ubicacion', location.trim());
+    formData.append('usuario_id', userId);
+    
+    // Agregar imagen con el área afectada marcada
+    formData.append('imagen', {
+      uri: imageUri,
+      name: uniqueFilename,
+      type: `image/${extension === 'jpg' ? 'jpeg' : extension}`,
+    });
+
+    const response = await api.post('/plantas/', formData, {
+      headers: {
+        'Content-Type': 'multipart/form-data',
+        'Authorization': `Bearer ${token}`,
+      },
+    });
+
+    if (response.data && response.data.message) {
+      Alert.alert('Éxito', response.data.message);
+      // Resetear formulario
+      setPlantName('');
+      setSpecies('');
+      setLocation('');
+      setImageUri(null);
+      setSelection({ x: 0, y: 0, width: 0, height: 0, visible: false });
+    }
+  } catch (error) {
+    console.error('Error:', {
+      message: error.message,
+      response: error.response?.data,
+    });
+    Alert.alert('Error', error.response?.data?.error || error.message || 'Error al guardar');
+  } finally {
+    setIsLoading(false);
+  }
+};
 
   return (
     <View style={styles.container}>
-      {/* Header */}
       <View style={styles.header}>
         <Text style={styles.headerText}>Modo Investigador (Admin)</Text>
         <TouchableOpacity onPress={() => setMenuVisible(true)}>
@@ -174,7 +181,6 @@ export default function AdminResearcherScreen({ navigation }) {
         </TouchableOpacity>
       </View>
 
-      {/* Menú desplegable */}
       <Modal
         transparent={true}
         visible={menuVisible}
@@ -206,7 +212,6 @@ export default function AdminResearcherScreen({ navigation }) {
         </TouchableOpacity>
       </Modal>
 
-      {/* Contenido principal */}
       <ScrollView 
         ref={scrollViewRef}
         contentContainerStyle={styles.scrollContainer}
@@ -216,9 +221,8 @@ export default function AdminResearcherScreen({ navigation }) {
           behavior={Platform.OS === 'ios' ? 'padding' : null}
           style={styles.keyboardAvoidingView}
         >
-          {/* Formulario */}
           <View style={styles.formContainer}>
-            <Text style={styles.label}>Nombre de la planta:</Text>
+            <Text style={styles.label}>Nombre de la planta*:</Text>
             <TextInput 
               style={styles.input} 
               placeholder="Ej. Tomate" 
@@ -245,17 +249,6 @@ export default function AdminResearcherScreen({ navigation }) {
               placeholderTextColor="#A7C4A0"
             />
             
-            <Text style={styles.label}>Descripción:</Text>
-            <TextInput 
-              style={[styles.input, styles.multilineInput]} 
-              placeholder="Ej. La hoja se ve amarilla..." 
-              value={description} 
-              onChangeText={setDescription} 
-              multiline 
-              numberOfLines={3}
-              placeholderTextColor="#A7C4A0"
-            />
-            
             <TouchableOpacity 
               style={styles.button} 
               onPress={takePhoto}
@@ -264,91 +257,89 @@ export default function AdminResearcherScreen({ navigation }) {
               {isLoading ? (
                 <ActivityIndicator color="white" />
               ) : (
-                <Text style={styles.buttonText}>Tomar Foto</Text>
+                <Text style={styles.buttonText}>Tomar Foto*</Text>
               )}
             </TouchableOpacity>
           </View>
 
-          {/* Área de la imagen */}
-          <View style={styles.imageContainer}>
-            {imageUri ? (
-              <View style={styles.imageWrapper}>
-                <Image 
-                  source={{ uri: imageUri }} 
-                  style={styles.image} 
-                  resizeMode="contain"
-                  onLoadStart={() => setIsLoading(true)}
-                  onLoadEnd={() => setIsLoading(false)}
-                  onLayout={(e) => {
-                    const { width, height } = e.nativeEvent.layout;
-                    setImageLayout({ width, height });
-                  }}
-                />
-                {selection.visible && (
-                  <View style={[
-                    styles.selectionBox,
-                    {
-                      left: selection.x,
-                      top: selection.y,
-                      width: selection.width,
-                      height: selection.height
-                    }
-                  ]}>
-                    <Text style={styles.selectionText}>Zona afectada</Text>
-                  </View>
-                )}
-                <View 
-                  style={styles.touchableImageArea}
-                  onStartShouldSetResponder={() => true}
-                  onResponderGrant={(e) => {
-                    const { locationX, locationY } = e.nativeEvent;
-                    setSelection({
-                      x: locationX,
-                      y: locationY,
-                      width: 0,
-                      height: 0,
-                      visible: true
-                    });
-                    setShowConfirmButton(false);
-                  }}
-                  onResponderMove={(e) => {
-                    const { locationX, locationY } = e.nativeEvent;
-                    setSelection(prev => ({
-                      ...prev,
-                      width: Math.min(locationX - prev.x, imageLayout.width - prev.x),
-                      height: Math.min(locationY - prev.y, imageLayout.height - prev.y)
-                    }));
-                  }}
-                  onResponderRelease={() => {
-                    if (selection.width > 10 && selection.height > 10) {
-                      setShowConfirmButton(true);
-                    } else {
-                      setSelection({ ...selection, visible: false });
-                    }
-                  }}
-                />
-              </View>
-            ) : (
-              <Text style={styles.imagePlaceholder}>Aquí aparecerá la imagen</Text>
+          <View style={styles.imageSection}>
+            <View style={styles.imageContainer}>
+              {imageUri ? (
+                <View style={styles.imageWrapper}>
+                  <Image 
+                    source={{ uri: imageUri }} 
+                    style={styles.image} 
+                    resizeMode="cover"
+                    onLoad={(e) => {
+                      const { width, height } = e.nativeEvent.source;
+                      setImageLayout({ width, height });
+                    }}
+                  />
+                  {selection.visible && (
+                    <View style={[
+                      styles.selectionBox,
+                      {
+                        left: selection.x,
+                        top: selection.y,
+                        width: selection.width,
+                        height: selection.height,
+                      }
+                    ]}>
+                      <Text style={styles.selectionText}>Zona afectada</Text>
+                    </View>
+                  )}
+                  <View 
+                    style={styles.touchableImageArea}
+                    onStartShouldSetResponder={() => true}
+                    onResponderGrant={(e) => {
+                      const { locationX, locationY } = e.nativeEvent;
+                      setSelection({
+                        x: locationX,
+                        y: locationY,
+                        width: 0,
+                        height: 0,
+                        visible: true
+                      });
+                      setShowConfirmButton(false);
+                    }}
+                    onResponderMove={(e) => {
+                      const { locationX, locationY } = e.nativeEvent;
+                      setSelection(prev => ({
+                        ...prev,
+                        width: Math.max(0, Math.min(locationX - prev.x, imageLayout.width - prev.x)),
+                        height: Math.max(0, Math.min(locationY - prev.y, imageLayout.height - prev.y))
+                      }));
+                    }}
+                    onResponderRelease={() => {
+                      if (selection.width > 10 && selection.height > 10) {
+                        setShowConfirmButton(true);
+                      } else {
+                        setSelection({ ...selection, visible: false });
+                      }
+                    }}
+                  />
+                </View>
+              ) : (
+                <Text style={styles.imagePlaceholder}>Aquí aparecerá la imagen</Text>
+              )}
+            </View>
+
+            {showConfirmButton && (
+              <TouchableOpacity 
+                style={[styles.button, styles.confirmButton]}
+                onPress={() => {
+                  setShowConfirmButton(false);
+                  Alert.alert(
+                    'Área seleccionada', 
+                    `Coordenadas: X:${selection.x.toFixed(0)}, Y:${selection.y.toFixed(0)}\nTamaño: ${selection.width.toFixed(0)}x${selection.height.toFixed(0)}`
+                  );
+                }}
+              >
+                <Text style={styles.buttonText}>Confirmar selección</Text>
+              </TouchableOpacity>
             )}
           </View>
 
-          {showConfirmButton && (
-            <TouchableOpacity 
-              style={[styles.button, styles.confirmButton]}
-              onPress={() => {
-                setShowConfirmButton(false);
-                Alert.alert(
-                  'Área seleccionada', 
-                  `Coordenadas: X:${selection.x.toFixed(0)}, Y:${selection.y.toFixed(0)}\nTamaño: ${selection.width.toFixed(0)}x${selection.height.toFixed(0)}`
-                );
-              }}
-            >
-              <Text style={styles.buttonText}>Confirmar selección</Text>
-            </TouchableOpacity>
-          )}
-
-          {/* Botón de detección */}
           <TouchableOpacity 
             style={[styles.button, styles.detectButton]} 
             onPress={detectDisease}
@@ -361,11 +352,10 @@ export default function AdminResearcherScreen({ navigation }) {
             )}
           </TouchableOpacity>
 
-          {/* Botón para guardar */}
           <TouchableOpacity 
             style={[styles.button, styles.saveButton]} 
             onPress={savePlantData}
-            disabled={!plantName || !description || !imageUri || !selection.visible || isLoading}
+            disabled={!plantName || !imageUri || isLoading}
           >
             {isLoading ? (
               <ActivityIndicator color="white" />
@@ -374,7 +364,6 @@ export default function AdminResearcherScreen({ navigation }) {
             )}
           </TouchableOpacity>
 
-          {/* Resultados de la detección */}
           {disease && (
             <View style={styles.diseaseInfo}>
               <Text style={styles.diseaseTitle}>{disease.name}</Text>
@@ -502,23 +491,26 @@ const styles = StyleSheet.create({
     fontSize: 16,
     fontWeight: 'bold',
   },
-  imageContainer: {
+  imageSection: {
     width: '90%',
+    alignSelf: 'center',
+  },
+  imageContainer: {
+    width: '100%',
     height: 250,
     backgroundColor: '#f0f0f0',
     justifyContent: 'center',
     alignItems: 'center',
     marginTop: 20,
-    alignSelf: 'center',
     borderRadius: 5,
     overflow: 'hidden',
     borderWidth: 1,
     borderColor: '#ddd',
+    position: 'relative',
   },
   imageWrapper: {
     width: '100%',
     height: '100%',
-    position: 'relative',
   },
   image: {
     width: '100%',
@@ -530,7 +522,7 @@ const styles = StyleSheet.create({
     left: 0,
     right: 0,
     bottom: 0,
-    backgroundColor: 'transparent',
+    zIndex: 1,
   },
   selectionBox: {
     position: 'absolute',
@@ -539,6 +531,7 @@ const styles = StyleSheet.create({
     borderColor: 'rgba(255, 0, 0, 0.8)',
     justifyContent: 'flex-end',
     alignItems: 'center',
+    zIndex: 2,
   },
   selectionText: {
     color: 'white',
