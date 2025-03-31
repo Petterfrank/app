@@ -1,27 +1,27 @@
-import React, { useState, useRef, useEffect, useCallback } from 'react';
-import { 
-  View, 
-  Text, 
-  TextInput, 
-  TouchableOpacity, 
-  StyleSheet, 
-  Alert, 
-  Image, 
-  KeyboardAvoidingView, 
-  Platform, 
-  ScrollView, 
-  Modal, 
-  ActivityIndicator 
-} from 'react-native';
-import { MoreVertical } from 'lucide-react-native';
-import * as ImagePicker from 'expo-image-picker';
-import AsyncStorage from '@react-native-async-storage/async-storage';
-import api from '../../api/index.js';
+import React, { useState, useRef, useEffect, useCallback } from "react";
+import {
+  View,
+  Text,
+  TextInput,
+  TouchableOpacity,
+  StyleSheet,
+  Alert,
+  Image,
+  KeyboardAvoidingView,
+  Platform,
+  ScrollView,
+  Modal,
+  ActivityIndicator,
+} from "react-native";
+import { MoreVertical } from "lucide-react-native";
+import * as ImagePicker from "expo-image-picker";
+import AsyncStorage from "@react-native-async-storage/async-storage";
+import api from "../../api/index.js";
 
 export default function AdminResearcherScreen({ navigation }) {
-  const [plantName, setPlantName] = useState('');
-  const [species, setSpecies] = useState('');
-  const [location, setLocation] = useState('');
+  const [plantName, setPlantName] = useState("");
+  const [species, setSpecies] = useState("");
+  const [location, setLocation] = useState("");
   const [imageUri, setImageUri] = useState(null);
   const [disease, setDisease] = useState(null);
   const [menuVisible, setMenuVisible] = useState(false);
@@ -31,7 +31,7 @@ export default function AdminResearcherScreen({ navigation }) {
     y: 0,
     width: 0,
     height: 0,
-    visible: false
+    visible: false,
   });
   const [showConfirmButton, setShowConfirmButton] = useState(false);
   const [imageLayout, setImageLayout] = useState({ width: 0, height: 0 });
@@ -40,13 +40,16 @@ export default function AdminResearcherScreen({ navigation }) {
   useEffect(() => {
     const requestPermissions = async () => {
       const { status } = await ImagePicker.requestCameraPermissionsAsync();
-      if (status !== 'granted') {
-        Alert.alert('Permisos requeridos', 'Se necesitan permisos para acceder a la cámara.');
+      if (status !== "granted") {
+        Alert.alert(
+          "Permisos requeridos",
+          "Se necesitan permisos para acceder a la cámara."
+        );
       }
     };
-    
+
     requestPermissions();
-    
+
     return () => {
       setImageUri(null);
       setDisease(null);
@@ -70,8 +73,11 @@ export default function AdminResearcherScreen({ navigation }) {
         setShowConfirmButton(false);
       }
     } catch (error) {
-      console.error('Error al tomar foto:', error);
-      Alert.alert('Error', 'No se pudo tomar la foto. Por favor intente nuevamente.');
+      console.error("Error al tomar foto:", error);
+      Alert.alert(
+        "Error",
+        "No se pudo tomar la foto. Por favor intente nuevamente."
+      );
     } finally {
       setIsLoading(false);
     }
@@ -79,21 +85,24 @@ export default function AdminResearcherScreen({ navigation }) {
 
   const detectDisease = useCallback(() => {
     if (!imageUri) {
-      Alert.alert('Error', 'Primero debes tomar una foto.');
+      Alert.alert("Error", "Primero debes tomar una foto.");
       return;
     }
 
     if (!selection.visible) {
-      Alert.alert('Error', 'Por favor selecciona el área afectada en la imagen.');
+      Alert.alert(
+        "Error",
+        "Por favor selecciona el área afectada en la imagen."
+      );
       return;
     }
 
     setIsLoading(true);
     setTimeout(() => {
       setDisease({
-        name: 'Moho gris',
-        description: 'Infección fúngica que afecta las hojas y tallos.',
-        affectedArea: selection
+        name: "Moho gris",
+        description: "Infección fúngica que afecta las hojas y tallos.",
+        affectedArea: selection,
       });
       setIsLoading(false);
       scrollViewRef.current?.scrollToEnd({ animated: true });
@@ -102,75 +111,97 @@ export default function AdminResearcherScreen({ navigation }) {
 
   const handleLogout = async () => {
     try {
-      await AsyncStorage.multiRemove(['access_token', 'refresh_token', 'user_role', 'user_id']);
-      navigation.navigate('Login');
+      await AsyncStorage.multiRemove([
+        "access_token",
+        "refresh_token",
+        "user_role",
+        "user_id",
+      ]);
+      navigation.navigate("Login");
     } catch (error) {
-      console.error('Error al cerrar sesión:', error);
-      Alert.alert('Error', 'No se pudo cerrar sesión correctamente');
+      console.error("Error al cerrar sesión:", error);
+      Alert.alert("Error", "No se pudo cerrar sesión correctamente");
     }
   };
 
-const savePlantData = async () => {
-  if (!plantName || !imageUri) {
-    Alert.alert('Error', 'Nombre e imagen son campos obligatorios');
-    return;
-  }
-
-  setIsLoading(true);
-  
-  try {
-    const [userId, token] = await Promise.all([
-      AsyncStorage.getItem('user_id'),
-      AsyncStorage.getItem('access_token')
-    ]);
-
-    if (!userId || !token) {
-      throw new Error('No se encontraron credenciales de usuario');
+  const savePlantData = async () => {
+    if (!plantName || !imageUri) {
+      Alert.alert("Error", "Nombre e imagen son campos obligatorios");
+      return;
     }
 
-    const filename = imageUri.split('/').pop();
-    const extension = filename.split('.').pop() || 'jpg';
-    const uniqueFilename = `planta_${Date.now()}.${extension}`;
+    setIsLoading(true);
 
-    const formData = new FormData();
-    formData.append('Nombre', plantName.trim());
-    if (species) formData.append('Especie', species.trim());
-    if (location) formData.append('Ubicacion', location.trim());
-    formData.append('usuario_id', userId);
-    
-    // Agregar imagen con el área afectada marcada
-    formData.append('imagen', {
-      uri: imageUri,
-      name: uniqueFilename,
-      type: `image/${extension === 'jpg' ? 'jpeg' : extension}`,
-    });
+    try {
+      const [userId, token] = await Promise.all([
+        AsyncStorage.getItem("user_id"),
+        AsyncStorage.getItem("access_token"),
+      ]);
 
-    const response = await api.post('/plantas/', formData, {
-      headers: {
-        'Content-Type': 'multipart/form-data',
-        'Authorization': `Bearer ${token}`,
-      },
-    });
+      if (!userId || !token) {
+        throw new Error("No se encontraron credenciales de usuario");
+      }
 
-    if (response.data && response.data.message) {
-      Alert.alert('Éxito', response.data.message);
-      // Resetear formulario
-      setPlantName('');
-      setSpecies('');
-      setLocation('');
-      setImageUri(null);
-      setSelection({ x: 0, y: 0, width: 0, height: 0, visible: false });
+      const filename = imageUri.split("/").pop();
+      const extension = filename.split(".").pop() || "jpg";
+      const uniqueFilename = `planta_${Date.now()}.${extension}`;
+
+      const formData = new FormData();
+      formData.append("Nombre", plantName.trim());
+      if (species) formData.append("Especie", species.trim());
+      if (location) formData.append("Ubicacion", location.trim());
+      formData.append("usuario", userId);
+
+      // Agregar imagen con el área afectada marcada
+      formData.append("imagen", {
+        uri: imageUri,
+        name: uniqueFilename,
+        type: `image/${extension === "jpg" ? "jpeg" : extension}`,
+      });
+
+      const response = await api.post("/plantas/", formData, {
+        headers: {
+          "Content-Type": "multipart/form-data",
+          Authorization: `Bearer ${token}`,
+        },
+      });
+
+      if (response.data && response.data.message) {
+        Alert.alert("Éxito", response.data.message);
+        // Resetear formulario
+        setPlantName("");
+        setSpecies("");
+        setLocation("");
+        setImageUri(null);
+        setDisease(null);
+        setSelection({ x: 0, y: 0, width: 0, height: 0, visible: false });
+      }
+      Alert.alert(
+        "✅ Guardado exitoso",
+        `Planta "${plantName}" registrada correctamente\n\n${
+          response.data.message || ""
+        }`,
+        [
+          {
+            text: "Aceptar",
+            onPress: () =>
+              scrollViewRef.current?.scrollTo({ y: 0, animated: true }),
+          },
+        ]
+      );
+    } catch (error) {
+      console.error("Error:", {
+        message: error.message,
+        response: error.response?.data,
+      });
+      Alert.alert(
+        "Error",
+        error.response?.data?.error || error.message || "Error al guardar"
+      );
+    } finally {
+      setIsLoading(false);
     }
-  } catch (error) {
-    console.error('Error:', {
-      message: error.message,
-      response: error.response?.data,
-    });
-    Alert.alert('Error', error.response?.data?.error || error.message || 'Error al guardar');
-  } finally {
-    setIsLoading(false);
-  }
-};
+  };
 
   return (
     <View style={styles.container}>
@@ -187,70 +218,67 @@ const savePlantData = async () => {
         animationType="fade"
         onRequestClose={() => setMenuVisible(false)}
       >
-        <TouchableOpacity 
-          style={styles.menuOverlay} 
+        <TouchableOpacity
+          style={styles.menuOverlay}
           activeOpacity={1}
           onPress={() => setMenuVisible(false)}
         >
           <View style={styles.menuContainer}>
-            <TouchableOpacity 
-              style={styles.menuItem} 
+            <TouchableOpacity
+              style={styles.menuItem}
               onPress={() => {
                 setMenuVisible(false);
-                navigation.navigate('Admin');
+                navigation.navigate("Admin");
               }}
             >
               <Text style={styles.menuItemText}>Volver al Panel</Text>
             </TouchableOpacity>
-            <TouchableOpacity 
-              style={styles.menuItem} 
-              onPress={handleLogout}
-            >
+            <TouchableOpacity style={styles.menuItem} onPress={handleLogout}>
               <Text style={styles.menuItemText}>Cerrar Sesión</Text>
             </TouchableOpacity>
           </View>
         </TouchableOpacity>
       </Modal>
 
-      <ScrollView 
+      <ScrollView
         ref={scrollViewRef}
         contentContainerStyle={styles.scrollContainer}
         keyboardShouldPersistTaps="handled"
       >
-        <KeyboardAvoidingView 
-          behavior={Platform.OS === 'ios' ? 'padding' : null}
+        <KeyboardAvoidingView
+          behavior={Platform.OS === "ios" ? "padding" : null}
           style={styles.keyboardAvoidingView}
         >
           <View style={styles.formContainer}>
             <Text style={styles.label}>Nombre de la planta*:</Text>
-            <TextInput 
-              style={styles.input} 
-              placeholder="Ej. Tomate" 
-              value={plantName} 
-              onChangeText={setPlantName} 
+            <TextInput
+              style={styles.input}
+              placeholder="Ej. Tomate"
+              value={plantName}
+              onChangeText={setPlantName}
               placeholderTextColor="#A7C4A0"
             />
-            
+
             <Text style={styles.label}>Especie:</Text>
-            <TextInput 
-              style={styles.input} 
-              placeholder="Ej. Solanum lycopersicum" 
-              value={species} 
-              onChangeText={setSpecies} 
+            <TextInput
+              style={styles.input}
+              placeholder="Ej. Solanum lycopersicum"
+              value={species}
+              onChangeText={setSpecies}
               placeholderTextColor="#A7C4A0"
             />
-            
+
             <Text style={styles.label}>Ubicación:</Text>
-            <TextInput 
-              style={styles.input} 
-              placeholder="Ej. Jardín trasero" 
-              value={location} 
-              onChangeText={setLocation} 
+            <TextInput
+              style={styles.input}
+              placeholder="Ej. Jardín trasero"
+              value={location}
+              onChangeText={setLocation}
               placeholderTextColor="#A7C4A0"
             />
-            
-            <TouchableOpacity 
-              style={styles.button} 
+
+            <TouchableOpacity
+              style={styles.button}
               onPress={takePhoto}
               disabled={isLoading}
             >
@@ -266,9 +294,9 @@ const savePlantData = async () => {
             <View style={styles.imageContainer}>
               {imageUri ? (
                 <View style={styles.imageWrapper}>
-                  <Image 
-                    source={{ uri: imageUri }} 
-                    style={styles.image} 
+                  <Image
+                    source={{ uri: imageUri }}
+                    style={styles.image}
                     resizeMode="cover"
                     onLoad={(e) => {
                       const { width, height } = e.nativeEvent.source;
@@ -276,19 +304,21 @@ const savePlantData = async () => {
                     }}
                   />
                   {selection.visible && (
-                    <View style={[
-                      styles.selectionBox,
-                      {
-                        left: selection.x,
-                        top: selection.y,
-                        width: selection.width,
-                        height: selection.height,
-                      }
-                    ]}>
+                    <View
+                      style={[
+                        styles.selectionBox,
+                        {
+                          left: selection.x,
+                          top: selection.y,
+                          width: selection.width,
+                          height: selection.height,
+                        },
+                      ]}
+                    >
                       <Text style={styles.selectionText}>Zona afectada</Text>
                     </View>
                   )}
-                  <View 
+                  <View
                     style={styles.touchableImageArea}
                     onStartShouldSetResponder={() => true}
                     onResponderGrant={(e) => {
@@ -298,16 +328,28 @@ const savePlantData = async () => {
                         y: locationY,
                         width: 0,
                         height: 0,
-                        visible: true
+                        visible: true,
                       });
                       setShowConfirmButton(false);
                     }}
                     onResponderMove={(e) => {
                       const { locationX, locationY } = e.nativeEvent;
-                      setSelection(prev => ({
+                      setSelection((prev) => ({
                         ...prev,
-                        width: Math.max(0, Math.min(locationX - prev.x, imageLayout.width - prev.x)),
-                        height: Math.max(0, Math.min(locationY - prev.y, imageLayout.height - prev.y))
+                        width: Math.max(
+                          0,
+                          Math.min(
+                            locationX - prev.x,
+                            imageLayout.width - prev.x
+                          )
+                        ),
+                        height: Math.max(
+                          0,
+                          Math.min(
+                            locationY - prev.y,
+                            imageLayout.height - prev.y
+                          )
+                        ),
                       }));
                     }}
                     onResponderRelease={() => {
@@ -320,18 +362,26 @@ const savePlantData = async () => {
                   />
                 </View>
               ) : (
-                <Text style={styles.imagePlaceholder}>Aquí aparecerá la imagen</Text>
+                <Text style={styles.imagePlaceholder}>
+                  Aquí aparecerá la imagen
+                </Text>
               )}
             </View>
 
             {showConfirmButton && (
-              <TouchableOpacity 
+              <TouchableOpacity
                 style={[styles.button, styles.confirmButton]}
                 onPress={() => {
                   setShowConfirmButton(false);
                   Alert.alert(
-                    'Área seleccionada', 
-                    `Coordenadas: X:${selection.x.toFixed(0)}, Y:${selection.y.toFixed(0)}\nTamaño: ${selection.width.toFixed(0)}x${selection.height.toFixed(0)}`
+                    "Área seleccionada",
+                    `Coordenadas: X:${selection.x.toFixed(
+                      0
+                    )}, Y:${selection.y.toFixed(
+                      0
+                    )}\nTamaño: ${selection.width.toFixed(
+                      0
+                    )}x${selection.height.toFixed(0)}`
                   );
                 }}
               >
@@ -340,8 +390,8 @@ const savePlantData = async () => {
             )}
           </View>
 
-          <TouchableOpacity 
-            style={[styles.button, styles.detectButton]} 
+          <TouchableOpacity
+            style={[styles.button, styles.detectButton]}
             onPress={detectDisease}
             disabled={!imageUri || isLoading || !selection.visible}
           >
@@ -352,8 +402,8 @@ const savePlantData = async () => {
             )}
           </TouchableOpacity>
 
-          <TouchableOpacity 
-            style={[styles.button, styles.saveButton]} 
+          <TouchableOpacity
+            style={[styles.button, styles.saveButton]}
             onPress={savePlantData}
             disabled={!plantName || !imageUri || isLoading}
           >
@@ -370,7 +420,8 @@ const savePlantData = async () => {
               <Text style={styles.diseaseText}>{disease.description}</Text>
               {disease.affectedArea && (
                 <Text style={styles.diseaseText}>
-                  Área afectada: {disease.affectedArea.width.toFixed(0)}x{disease.affectedArea.height.toFixed(0)} px
+                  Área afectada: {disease.affectedArea.width.toFixed(0)}x
+                  {disease.affectedArea.height.toFixed(0)} px
                 </Text>
               )}
             </View>
@@ -384,32 +435,32 @@ const savePlantData = async () => {
 const styles = StyleSheet.create({
   container: {
     flex: 1,
-    backgroundColor: '#F5F5DC',
+    backgroundColor: "#F5F5DC",
   },
   header: {
-    flexDirection: 'row',
-    justifyContent: 'space-between',
-    alignItems: 'center',
-    width: '100%',
+    flexDirection: "row",
+    justifyContent: "space-between",
+    alignItems: "center",
+    width: "100%",
     padding: 15,
-    backgroundColor: '#006400',
-    paddingTop: Platform.OS === 'android' ? 40 : 15,
+    backgroundColor: "#006400",
+    paddingTop: Platform.OS === "android" ? 40 : 15,
   },
   headerText: {
-    color: 'white',
+    color: "white",
     fontSize: 20,
-    fontWeight: 'bold',
+    fontWeight: "bold",
   },
   menuOverlay: {
     flex: 1,
-    backgroundColor: 'rgba(0,0,0,0.5)',
-    justifyContent: 'flex-start',
-    alignItems: 'flex-end',
-    paddingTop: Platform.OS === 'android' ? 70 : 60,
+    backgroundColor: "rgba(0,0,0,0.5)",
+    justifyContent: "flex-start",
+    alignItems: "flex-end",
+    paddingTop: Platform.OS === "android" ? 70 : 60,
     paddingRight: 10,
   },
   menuContainer: {
-    backgroundColor: 'white',
+    backgroundColor: "white",
     borderRadius: 5,
     padding: 10,
     minWidth: 150,
@@ -419,7 +470,7 @@ const styles = StyleSheet.create({
   },
   menuItemText: {
     fontSize: 16,
-    color: '#006400',
+    color: "#006400",
   },
   scrollContainer: {
     flexGrow: 1,
@@ -429,13 +480,13 @@ const styles = StyleSheet.create({
     flex: 1,
   },
   formContainer: {
-    width: '90%',
-    alignSelf: 'center',
-    backgroundColor: '#FFFFF0',
+    width: "90%",
+    alignSelf: "center",
+    backgroundColor: "#FFFFF0",
     padding: 20,
     borderRadius: 10,
     marginTop: 20,
-    shadowColor: '#000',
+    shadowColor: "#000",
     shadowOffset: { width: 0, height: 2 },
     shadowOpacity: 0.1,
     shadowRadius: 4,
@@ -443,81 +494,81 @@ const styles = StyleSheet.create({
   },
   label: {
     fontSize: 16,
-    color: '#8B7765',
+    color: "#8B7765",
     marginBottom: 8,
   },
   input: {
-    backgroundColor: '#FFFFFF',
+    backgroundColor: "#FFFFFF",
     padding: 12,
     borderRadius: 5,
     fontSize: 16,
-    color: '#4d4d4d',
+    color: "#4d4d4d",
     marginBottom: 15,
     borderWidth: 1,
-    borderColor: '#ddd',
+    borderColor: "#ddd",
   },
   multilineInput: {
     minHeight: 80,
-    textAlignVertical: 'top',
+    textAlignVertical: "top",
   },
   button: {
-    backgroundColor: '#228B22',
+    backgroundColor: "#228B22",
     padding: 15,
     borderRadius: 5,
-    alignItems: 'center',
+    alignItems: "center",
     marginTop: 10,
   },
   detectButton: {
-    backgroundColor: '#006400',
-    width: '90%',
-    alignSelf: 'center',
+    backgroundColor: "#006400",
+    width: "90%",
+    alignSelf: "center",
     marginTop: 20,
   },
   saveButton: {
-    backgroundColor: '#2E7D32',
-    width: '90%',
-    alignSelf: 'center',
+    backgroundColor: "#2E7D32",
+    width: "90%",
+    alignSelf: "center",
     marginTop: 10,
     marginBottom: 20,
   },
   confirmButton: {
-    backgroundColor: '#8B0000',
-    width: '90%',
-    alignSelf: 'center',
+    backgroundColor: "#8B0000",
+    width: "90%",
+    alignSelf: "center",
     marginTop: 10,
   },
   buttonText: {
-    color: '#FFFFFF',
+    color: "#FFFFFF",
     fontSize: 16,
-    fontWeight: 'bold',
+    fontWeight: "bold",
   },
   imageSection: {
-    width: '90%',
-    alignSelf: 'center',
+    width: "90%",
+    alignSelf: "center",
   },
   imageContainer: {
-    width: '100%',
+    width: "100%",
     height: 250,
-    backgroundColor: '#f0f0f0',
-    justifyContent: 'center',
-    alignItems: 'center',
+    backgroundColor: "#f0f0f0",
+    justifyContent: "center",
+    alignItems: "center",
     marginTop: 20,
     borderRadius: 5,
-    overflow: 'hidden',
+    overflow: "hidden",
     borderWidth: 1,
-    borderColor: '#ddd',
-    position: 'relative',
+    borderColor: "#ddd",
+    position: "relative",
   },
   imageWrapper: {
-    width: '100%',
-    height: '100%',
+    width: "100%",
+    height: "100%",
   },
   image: {
-    width: '100%',
-    height: '100%',
+    width: "100%",
+    height: "100%",
   },
   touchableImageArea: {
-    position: 'absolute',
+    position: "absolute",
     top: 0,
     left: 0,
     right: 0,
@@ -525,32 +576,32 @@ const styles = StyleSheet.create({
     zIndex: 1,
   },
   selectionBox: {
-    position: 'absolute',
-    backgroundColor: 'rgba(255, 0, 0, 0.3)',
+    position: "absolute",
+    backgroundColor: "rgba(255, 0, 0, 0.3)",
     borderWidth: 2,
-    borderColor: 'rgba(255, 0, 0, 0.8)',
-    justifyContent: 'flex-end',
-    alignItems: 'center',
+    borderColor: "rgba(255, 0, 0, 0.8)",
+    justifyContent: "flex-end",
+    alignItems: "center",
     zIndex: 2,
   },
   selectionText: {
-    color: 'white',
-    backgroundColor: 'rgba(255, 0, 0, 0.6)',
+    color: "white",
+    backgroundColor: "rgba(255, 0, 0, 0.6)",
     padding: 2,
     fontSize: 12,
   },
   imagePlaceholder: {
-    color: '#666',
+    color: "#666",
     fontSize: 16,
   },
   diseaseInfo: {
-    width: '90%',
+    width: "90%",
     padding: 20,
-    backgroundColor: '#ffffff',
+    backgroundColor: "#ffffff",
     borderRadius: 10,
     marginTop: 20,
-    alignSelf: 'center',
-    shadowColor: '#000',
+    alignSelf: "center",
+    shadowColor: "#000",
     shadowOffset: { width: 0, height: 2 },
     shadowOpacity: 0.1,
     shadowRadius: 4,
@@ -558,13 +609,13 @@ const styles = StyleSheet.create({
   },
   diseaseTitle: {
     fontSize: 18,
-    fontWeight: 'bold',
-    color: '#228B22',
+    fontWeight: "bold",
+    color: "#228B22",
     marginBottom: 8,
   },
   diseaseText: {
     fontSize: 16,
-    color: '#555',
+    color: "#555",
     lineHeight: 22,
   },
 });
