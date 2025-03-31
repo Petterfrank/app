@@ -98,7 +98,7 @@ Esto abrirá la interfaz de Expo en tu navegador. Desde ahí puedes:
 - **Gestión de enfermedades**: Los administradores pueden ver enfermedades registradas y sus tratamientos.
 
 ### 📤 **Subida de Imágenes**
-La aplicación permite subir imágenes a la API para su análisis. Asegúrate de que el backend esté configurado para recibir imágenes en formato `multipart/form-data`. Si utilizas Expo, instala las siguientes dependencias:
+La aplicación permite subir imágenes a la API para su análisis. Asegúrate de que el backend esté configurado para recibir imágenes en formato `multipart/form-data`. Si utilizas Expo, instala las siguientes dependencias
 
 ```sh
 npm install expo-image-picker axios
